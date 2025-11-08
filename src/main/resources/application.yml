@@ -1,0 +1,30 @@
+spring:
+  application:
+    name: estudai
+  profiles:
+    active: dev
+  config:
+    import:
+      - application-${spring.profiles.active}.yml
+
+server:
+  port: 8080
+  servlet:
+    context-path: /api
+  error:
+    include-message: always
+    include-binding-errors: always
+
+logging:
+  level:
+    com.estudai: DEBUG
+    org.springframework.security: DEBUG
+    org.hibernate.SQL: DEBUG
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    operations-sorter: method
+    tags-sorter: alpha

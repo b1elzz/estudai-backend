@@ -1,0 +1,42 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/estudai_dev
+    username: postgres
+    password: admin
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: true
+    defer-datasource-initialization: true
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+  sql:
+    init:
+      mode: always
+
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username:
+    password:
+    properties:
+      mail.smtp:
+        auth: true
+        starttls.enable: true
+
+jwt:
+  secret:
+  expiration: 86400000
+
+estudai:
+  email:
+    sender-name: "Equipe Estudai"
+  allowed-domains: "gmail.com,estudante.rs.gov.br,escola.com"
+
+logging:
+  level:
+    br.com.fundatec.estudai: DEBUG
