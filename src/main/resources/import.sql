@@ -3,8 +3,7 @@
 -- Generated automatically - 200 questions
 -- =========================================
 
--- Disable foreign key checks for better performance
-SET session_replication_role = 'replica';
+-- Note: Foreign key constraints are handled by the database
 
 INSERT INTO questions (id, title, index, year, subject, language, context, alternatives_introduction, correct_alternative, files, knowledge_area, area_code, created_at) VALUES (1, 'Questão 1 - ENEM 2023', 1, 2023, 'linguagens', 'espanhol', '**TEXTO I**
 
@@ -2297,8 +2296,7 @@ INSERT INTO alternatives (id, question_id, letter, text, file_path, is_correct) 
 INSERT INTO alternatives (id, question_id, letter, text, file_path, is_correct) VALUES (1000, 200, 'E', '900 N', NULL, FALSE);
 
 
--- Re-enable foreign key checks
-SET session_replication_role = 'origin';
+-- Foreign key constraints are automatically enforced by the database
 
 -- Update sequences
 SELECT setval('questions_id_seq', 201);

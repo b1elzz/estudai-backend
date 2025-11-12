@@ -18,11 +18,11 @@ import java.nio.charset.StandardCharsets;
 
 @Slf4j
 @Service
-@Profile("!dev")
 @RequiredArgsConstructor
 public class EmailServiceImpl implements EmailService {
 
     private static final String RECOVERY_TEMPLATE = "email/password-recovery";
+    private static final String LOGO_SVG_PATH = "templates/email/assets/modelo 1-Photoroom 2.svg";
     private static final String MASCOT_IMAGE_PATH = "static/images/mascot.png";
 
     private final JavaMailSender mailSender;
@@ -57,6 +57,7 @@ public class EmailServiceImpl implements EmailService {
             configureSender(helper);
             configureRecipient(helper, toEmail);
             addContent(helper, recoveryCode, userName);
+            addLogoImage(helper);
             addMascotImage(helper);
 
             return message;
@@ -98,6 +99,20 @@ public class EmailServiceImpl implements EmailService {
             helper.setText(htmlContent, true);
         } catch (Exception e) {
             throw new EmailSendingException("Failed to add email content", e);
+        }
+    }
+
+    private void addLogoImage(MimeMessageHelper helper) {
+        try {
+            ClassPathResource logoImage = new ClassPathResource(LOGO_SVG_PATH);
+            if (logoImage.exists()) {
+                helper.addInline("logo", logoImage, "image/svg+xml");
+                log.debug("Logo SVG added to email");
+            } else {
+                log.warn("Logo SVG not found at: {}", LOGO_SVG_PATH);
+            }
+        } catch (Exception e) {
+            log.warn("Could not add logo SVG to email", e);
         }
     }
 

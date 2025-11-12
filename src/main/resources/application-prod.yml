@@ -1,12 +1,18 @@
 spring:
+
+  # ============================================
   datasource:
-    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:estudai}
-    username: ${DB_USERNAME}
+    url: ${DATABASE_URL:jdbc:postgresql://dpg-d4agm87diees73d2u9m0-a.oregon-postgres.render.com:5432/estudai_nu9k}
+    username: ${DB_USERNAME:estudai_nu9k_user}
     password: ${DB_PASSWORD}
     driver-class-name: org.postgresql.Driver
     hikari:
       maximum-pool-size: 10
+      minimum-idle: 5
       connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+      leak-detection-threshold: 60000
 
   jpa:
     hibernate:
@@ -17,6 +23,12 @@ spring:
         dialect: org.hibernate.dialect.PostgreSQLDialect
         jdbc:
           batch_size: 20
+        format_sql: false
+    defer-datasource-initialization: false
+
+  sql:
+    init:
+      mode: never
 
   mail:
     host: ${SMTP_HOST:smtp.gmail.com}
@@ -26,10 +38,21 @@ spring:
     properties:
       mail.smtp:
         auth: true
-        starttls.enable: true
-        connectiontimeout: 5000
-        timeout: 5000
-        writetimeout: 5000
+        starttls:
+          enable: true
+        connectiontimeout: 10000
+        timeout: 10000
+        writetimeout: 10000
+        ssl:
+          trust: "*"
+
+  thymeleaf:
+    prefix: classpath:/templates/
+    suffix: .html
+    mode: HTML
+    encoding: UTF-8
+    cache: true
+
 
 jwt:
   secret: ${JWT_SECRET}
@@ -42,6 +65,9 @@ estudai:
     - "gmail.com"
     - "estudante.rs.gov.br"
     - "escola.com"
+    - "hotmail.com"
+    - "outlook.com"
+    - "yahoo.com"
   questions:
     max-per-request: 50
 
@@ -50,3 +76,5 @@ logging:
     br.com.fundatec.estudai: INFO
     org.springframework.security: WARN
     org.hibernate: WARN
+    org.springframework.mail: INFO
+    root: WARN

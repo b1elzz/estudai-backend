@@ -1,12 +1,15 @@
 package br.com.fundatec.estudai.estudai.service;
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
 
 @Slf4j
 @Service
 @Profile("dev")
+@ConditionalOnProperty(name = "estudai.email.use-real-email", havingValue = "false", matchIfMissing = true)
 public class EmailServiceMock implements EmailService {
 
     @Override

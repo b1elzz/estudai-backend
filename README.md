@@ -80,7 +80,9 @@
 
 ### **Email**
 - **Spring Mail** - Envio de emails (recuperação de senha)
-- **Thymeleaf** - Templates de email
+- **Thymeleaf** - Templates de email HTML responsivos
+- **Email Mock** - Modo de desenvolvimento (apenas logs)
+- **Email Real** - Configurável via `estudai.email.use-real-email`
 
 ---
 
@@ -191,21 +193,42 @@ src/main/java/br/com/fundatec/estudai/estudai/
 
 ### **1. Configurar Banco de Dados**
 
-```sql
-CREATE DATABASE estudai_dev;
-```
+O projeto está configurado para usar o **PostgreSQL do Render** por padrão. As credenciais já estão configuradas no `application-dev.yml`.
 
-### **2. Configurar Credenciais**
-
-Edite `src/main/resources/application-dev.yml`:
+**Para usar banco local**, edite `src/main/resources/application-dev.yml`:
 
 ```yaml
 spring:
   datasource:
     url: jdbc:postgresql://localhost:5432/estudai_dev
-    username: postgres  # ← SEU USUÁRIO
-    password: admin     # ← SUA SENHA
+    username: postgres
+    password: sua_senha
 ```
+
+### **2. Configurar Email (Opcional - para testar envio real)**
+
+Por padrão, o ambiente `dev` usa **Email Mock** (apenas logs). Para testar envio real de emails:
+
+Edite `src/main/resources/application-dev.yml`:
+
+```yaml
+estudai:
+  email:
+    use-real-email: true  # Mude para 'true' para enviar emails reais
+```
+
+E configure suas credenciais de email:
+
+```yaml
+spring:
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: seu-email@gmail.com
+    password: senha_de_app_do_gmail  # Use Senha de App, não a senha normal!
+```
+
+> **💡 Dica**: Para Gmail, gere uma [Senha de App](https://myaccount.google.com/apppasswords)
 
 ### **3. Executar a Aplicação**
 
@@ -222,6 +245,28 @@ spring:
 - **API Base**: http://localhost:8080/api
 - **Swagger UI**: http://localhost:8080/api/swagger-ui/index.html
 - **API Docs JSON**: http://localhost:8080/api/v3/api-docs
+
+---
+
+## 🚀 Deploy em Produção
+
+Para fazer deploy em produção, consulte:
+
+- **📘 [GUIA_VARIAVEIS_AMBIENTE.md](GUIA_VARIAVEIS_AMBIENTE.md)** - Configuração completa de variáveis de ambiente
+- **📗 [ESTRUTURA_BACKEND.md](ESTRUTURA_BACKEND.md)** - Estrutura detalhada do backend
+- **📙 [DIAGRAMA_BANCO_DADOS.md](DIAGRAMA_BANCO_DADOS.md)** - Diagrama do banco de dados
+
+### **Variáveis de Ambiente Necessárias (Produção):**
+
+```bash
+SPRING_PROFILES_ACTIVE=prod
+DATABASE_URL=jdbc:postgresql://...
+DB_USERNAME=...
+DB_PASSWORD=...
+EMAIL_USERNAME=...
+EMAIL_PASSWORD=...
+JWT_SECRET=...
+```
 
 ---
 
@@ -365,6 +410,53 @@ Este usuário é criado automaticamente ao iniciar a aplicação.
 
 ---
 
+## 📧 Testando Envio de Email
+
+### **Modo Mock (Padrão em Dev)**
+
+Por padrão, o ambiente `dev` usa **Email Mock** que apenas loga no console:
+
+```
+📧 [MOCK] Password Recovery Email
+─────────────────────────────────
+To: usuario@exemplo.com
+User: Nome do Usuário
+Recovery Code: 123456
+─────────────────────────────────
+```
+
+### **Modo Real (Para Testar)**
+
+Para testar envio real de emails em desenvolvimento:
+
+1. **Configure no `application-dev.yml`:**
+   ```yaml
+   estudai:
+     email:
+       use-real-email: true
+   ```
+
+2. **Configure credenciais SMTP:**
+   ```yaml
+   spring:
+     mail:
+       host: smtp.gmail.com
+       port: 587
+       username: seu-email@gmail.com
+       password: senha_de_app
+   ```
+
+3. **Teste via API:**
+   ```bash
+   curl -X POST http://localhost:8080/api/auth/request-password-reset \
+     -H "Content-Type: application/json" \
+     -d '{"email": "seu-email@exemplo.com"}'
+   ```
+
+> **⚠️ Importante**: Para Gmail, use uma [Senha de App](https://myaccount.google.com/apppasswords), não a senha normal da conta!
+
+---
+
 ## 📊 Banco de Dados
 
 ### **Diagrama ER Simplificado**
@@ -389,10 +481,12 @@ Este usuário é criado automaticamente ao iniciar a aplicação.
 
 ### **População Automática**
 
-O banco é populado automaticamente via `src/main/resources/import.sql`:
-- 200 questões do ENEM (2022-2023)
-- 2 usuários mock para testes
+O banco é populado automaticamente via `src/main/resources/import.sql` **apenas em desenvolvimento**:
+- 200+ questões do ENEM (2022-2023)
+- Usuários mock para testes
 - Metas e streaks de exemplo
+
+> **Nota**: Em produção (`prod`), o `import.sql` é desabilitado automaticamente.
 
 ---
 
@@ -533,37 +627,14 @@ log.error() → Erros críticos
 - `GUIA_POSTMAN_CONFIGURACAO.md` - Como configurar o Postman
 - `USUARIO_MOCK_CONFIGURADO.md` - Informações do usuário de teste
 
----
-
-## 🎓 Para o TCC
-
-### **Pontos Fortes**
-
-1. ✅ Arquitetura bem definida (camadas)
-2. ✅ Aplicação de princípios SOLID
-3. ✅ Clean Code e boas práticas
-4. ✅ Tratamento robusto de exceções
-5. ✅ Documentação completa (Swagger)
-6. ✅ Segurança (JWT + BCrypt)
-7. ✅ Validações em múltiplas camadas
-8. ✅ Gamificação (moedas + streaks)
-
-### **Possíveis Melhorias Futuras**
-
-- Testes automatizados (unitários e integração)
-- Cache para queries frequentes (Redis)
-- Paginação avançada (Pageable)
-- Rate limiting para APIs públicas
-- Docker para deploy
-- CI/CD Pipeline
 
 ---
 
 ## 👨‍💻 Autor
 
-**Seu Nome**  
-TCC - [Instituição]  
-Ano: 2024/2025
+**Grupo: Gabriel Monteiro Dias**  
+TCC - Fundatec  
+Ano: 2025
 
 ---
 
@@ -573,13 +644,4 @@ Este projeto foi desenvolvido para fins acadêmicos (TCC).
 
 ---
 
-## 🙏 Agradecimentos
-
-- Dados das questões: [ENEM API](https://enem.dev)
-- Spring Boot Community
-- PostgreSQL Team
-
----
-
-**⭐ Se este projeto te ajudou, deixa uma estrela! ⭐**
 

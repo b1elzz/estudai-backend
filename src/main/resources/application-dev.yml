@@ -1,22 +1,34 @@
 spring:
   datasource:
-    url: jdbc:postgresql://localhost:5432/estudai_dev
+    url: jdbc:postgresql://localhost:5432/estudai
     username: postgres
     password: admin
     driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 5
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
 
   jpa:
     hibernate:
-      ddl-auto: create-drop
+      ddl-auto: update
     show-sql: true
-    defer-datasource-initialization: true
     properties:
       hibernate:
         format_sql: true
         dialect: org.hibernate.dialect.PostgreSQLDialect
+        jdbc:
+          batch_size: 20
+    defer-datasource-initialization: true
+
+
   sql:
     init:
       mode: always
+      data-locations: classpath:import.sql
+      continue-on-error: true
+      encoding: UTF-8
 
   mail:
     host: smtp.gmail.com
@@ -26,7 +38,19 @@ spring:
     properties:
       mail.smtp:
         auth: true
-        starttls.enable: true
+        starttls:
+          enable: true
+        connectiontimeout: 5000
+        timeout: 5000
+        writetimeout: 5000
+
+
+  thymeleaf:
+    prefix: classpath:/templates/
+    suffix: .html
+    mode: HTML
+    encoding: UTF-8
+    cache: false
 
 jwt:
   secret:
@@ -35,8 +59,19 @@ jwt:
 estudai:
   email:
     sender-name: "Equipe Estudai"
-  allowed-domains: "gmail.com,estudante.rs.gov.br,escola.com"
+    # Use 'true' para enviar emails reais em dev, 'false' para usar mock
+    use-real-email: true
+  allowed-domains:
+    - "gmail.com"
+    - "estudante.rs.gov.br"
+    - "escola.com"
+    - "hotmail.com"
+    - "outlook.com"
+    - "yahoo.com"
 
 logging:
   level:
     br.com.fundatec.estudai: DEBUG
+    org.springframework.mail: DEBUG
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE

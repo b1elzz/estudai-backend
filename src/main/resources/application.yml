@@ -2,10 +2,7 @@ spring:
   application:
     name: estudai
   profiles:
-    active: dev
-  config:
-    import:
-      - application-${spring.profiles.active}.yml
+    active: ${SPRING_PROFILES_ACTIVE:dev}
 
 server:
   port: 8080
@@ -14,12 +11,17 @@ server:
   error:
     include-message: always
     include-binding-errors: always
+    include-stacktrace: on_param
+    include-exception: false
 
 logging:
   level:
-    com.estudai: DEBUG
-    org.springframework.security: DEBUG
-    org.hibernate.SQL: DEBUG
+    com.estudai: INFO
+    org.springframework.security: INFO
+    org.hibernate.SQL: INFO
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
 
 springdoc:
   api-docs:
@@ -28,3 +30,4 @@ springdoc:
     path: /swagger-ui.html
     operations-sorter: method
     tags-sorter: alpha
+    try-it-out-enabled: true
