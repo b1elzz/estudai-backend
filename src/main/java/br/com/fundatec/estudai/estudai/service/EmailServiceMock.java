@@ -23,4 +23,20 @@ public class EmailServiceMock implements EmailService {
             ─────────────────────────────────
             """, toEmail, userName, recoveryCode);
     }
+
+    @Override
+    public void sendRewardRedemptionEmail(String toEmail, String userName, String rewardTitle,
+                                         String rewardDescription, Integer rewardCost, Long redemptionId) {
+        log.info("""
+            📧 [MOCK] Reward Redemption Email
+            ─────────────────────────────────
+            To: {}
+            User: {}
+            Reward: {}
+            Description: {}
+            Cost: {} moedas
+            Redemption ID: {}
+            ─────────────────────────────────
+            """, toEmail, userName, rewardTitle, rewardDescription, rewardCost, redemptionId);
+    }
 }

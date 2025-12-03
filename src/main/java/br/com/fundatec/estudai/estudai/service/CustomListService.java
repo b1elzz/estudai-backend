@@ -252,21 +252,15 @@ public class CustomListService {
     }
 
     /**
-     * Finds questions by filters (subject and/or year)
+     * Finds questions by filters (subject is required, year is optional)
      */
     private List<Question> findQuestionsByFilters(String subject, Integer year, int count) {
-        if (subject != null && year != null) {
+        // Subject is now required, so we always filter by it
+        if (year != null) {
             return questionRepository.findRandomBySubjectAndYear(subject, year, count);
         }
 
-        if (subject != null) {
-            return questionRepository.findRandomBySubject(subject, count);
-        }
-
-        if (year != null) {
-            return questionRepository.findRandomByYear(year, count);
-        }
-
-        return questionRepository.findRandom(count);
+        // If no year specified, filter only by subject
+        return questionRepository.findRandomBySubject(subject, count);
     }
 }

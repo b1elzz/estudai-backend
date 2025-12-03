@@ -14,11 +14,7 @@ public class CorsConfig {
             @Override
             public void addCorsMappings(CorsRegistry registry) {
                 registry.addMapping("/api/**")
-                        .allowedOrigins(
-                                "http://localhost:3000",  // React development
-                                "http://localhost:8081",  // React Native development
-                                "https://yourapp.com"     // Production domain
-                        )
+                        .allowedOriginPatterns("*")  // Permite todas as origens (útil para desenvolvimento mobile)
                         .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH")
                         .allowedHeaders("Authorization", "Content-Type", "Accept")
                         .allowCredentials(true)

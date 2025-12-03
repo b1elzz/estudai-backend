@@ -22,6 +22,7 @@ import java.nio.charset.StandardCharsets;
 public class EmailServiceImpl implements EmailService {
 
     private static final String RECOVERY_TEMPLATE = "email/password-recovery";
+    private static final String REWARD_REDEMPTION_TEMPLATE = "email/reward-redemption";
     private static final String LOGO_SVG_PATH = "templates/email/assets/modelo 1-Photoroom 2.svg";
     private static final String MASCOT_IMAGE_PATH = "static/images/mascot.png";
 
@@ -124,6 +125,51 @@ public class EmailServiceImpl implements EmailService {
             }
         } catch (Exception e) {
             log.warn("Could not add mascot image to email", e);
+        }
+    }
+
+    @Override
+    public void sendRewardRedemptionEmail(String toEmail, String userName, String rewardTitle,
+                                         String rewardDescription, Integer rewardCost, Long redemptionId) {
+        try {
+            validateEmail(toEmail);
+            MimeMessage message = createRedemptionMessage(toEmail, userName, rewardTitle, 
+                                                         rewardDescription, rewardCost, redemptionId);
+            mailSender.send(message);
+            log.info("Reward redemption email sent successfully to: {}", toEmail);
+        } catch (EmailSendingException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("Failed to send reward redemption email to: {}", toEmail, e);
+            throw new EmailSendingException("Failed to send reward redemption email to: " + toEmail, e);
+        }
+    }
+
+    private MimeMessage createRedemptionMessage(String toEmail, String userName, String rewardTitle,
+                                                String rewardDescription, Integer rewardCost, Long redemptionId) {
+        try {
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, StandardCharsets.UTF_8.name());
+
+            configureSender(helper);
+            helper.setTo(toEmail);
+            helper.setSubject("🎉 Resgate Confirmado - Estudai");
+            
+            Context context = new Context();
+            context.setVariable("userName", userName != null ? userName : "Estudante");
+            context.setVariable("rewardTitle", rewardTitle);
+            context.setVariable("rewardDescription", rewardDescription != null ? rewardDescription : "");
+            context.setVariable("rewardCost", rewardCost != null ? rewardCost : 0);
+            context.setVariable("redemptionId", redemptionId != null ? redemptionId : 0);
+
+            String htmlContent = templateEngine.process(REWARD_REDEMPTION_TEMPLATE, context);
+            helper.setText(htmlContent, true);
+            
+            addLogoImage(helper);
+
+            return message;
+        } catch (Exception e) {
+            throw new EmailSendingException("Failed to create redemption email message", e);
         }
     }
 }

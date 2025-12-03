@@ -24,6 +24,8 @@ public class CustomListRequest {
     @Positive(message = "Filter year must be positive")
     private Integer filterYear;
 
+    @NotBlank(message = "Filter subject is required")
+    @Size(max = 50, message = "Subject must not exceed 50 characters")
     private String filterSubject;
 
     @Positive(message = "Questions count must be positive")

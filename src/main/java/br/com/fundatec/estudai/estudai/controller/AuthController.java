@@ -5,6 +5,7 @@ import br.com.fundatec.estudai.estudai.dto.request.PasswordRecoveryRequest;
 import br.com.fundatec.estudai.estudai.dto.request.RegisterRequest;
 import br.com.fundatec.estudai.estudai.dto.response.ErrorResponse;
 import br.com.fundatec.estudai.estudai.dto.response.LoginResponse;
+import br.com.fundatec.estudai.estudai.dto.response.UserInfoResponse;
 import br.com.fundatec.estudai.estudai.dto.response.UserResponse;
 import br.com.fundatec.estudai.estudai.entity.User;
 import br.com.fundatec.estudai.estudai.mapper.AuthMapper;
@@ -12,6 +13,8 @@ import br.com.fundatec.estudai.estudai.service.AuthService;
 import br.com.fundatec.estudai.estudai.service.PasswordRecoveryService;
 import br.com.fundatec.estudai.estudai.service.TokenService;
 import br.com.fundatec.estudai.estudai.service.UserService;
+import br.com.fundatec.estudai.estudai.util.AuthenticationUtils;
+import org.springframework.security.core.Authentication;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
@@ -37,6 +40,7 @@ public class AuthController {
     private final UserService userService;
     private final PasswordRecoveryService passwordRecoveryService;
     private final AuthMapper authMapper;
+    private final AuthenticationUtils authenticationUtils;
 
     @Operation(
             summary = "Authenticate user",
@@ -281,5 +285,48 @@ public class AuthController {
     public ResponseEntity<Void> resetPassword(@RequestBody @Valid PasswordRecoveryRequest request) {
         passwordRecoveryService.resetPassword(request);
         return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/me")
+    @Operation(
+            summary = "Get current user info",
+            description = "Get current authenticated user information including coins and streak"
+    )
+    @io.swagger.v3.oas.annotations.security.SecurityRequirement(name = "bearerAuth")
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "User information retrieved successfully",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = UserInfoResponse.class),
+                            examples = @ExampleObject(
+                                    value = """
+                                    {
+                                        "id": 1,
+                                        "name": "John Doe",
+                                        "email": "john@example.com",
+                                        "streakDays": 11,
+                                        "coins": 1000
+                                    }"""
+                            )
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "401",
+                    description = "User not authenticated"
+            )
+    })
+    public ResponseEntity<UserInfoResponse> getCurrentUser(Authentication authentication) {
+        User user = authenticationUtils.getUser(authentication);
+        
+        UserInfoResponse response = new UserInfoResponse();
+        response.setId(user.getId());
+        response.setName(user.getName());
+        response.setEmail(user.getEmail());
+        response.setStreakDays(user.getStreakDays());
+        response.setCoins(user.getCoins());
+        
+        return ResponseEntity.ok(response);
     }
 }

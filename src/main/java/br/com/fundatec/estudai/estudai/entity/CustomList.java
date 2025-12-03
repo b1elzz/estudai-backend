@@ -44,7 +44,7 @@ public class CustomList {
     @Column(name = "filter_year")
     private Integer filterYear;
 
-    @Column(name = "filter_subject", length = 50)
+    @Column(name = "filter_subject", nullable = false, length = 50)
     private String filterSubject;
 
     @Column(name = "questions_count")

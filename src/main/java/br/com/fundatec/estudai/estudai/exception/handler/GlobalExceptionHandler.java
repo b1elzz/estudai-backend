@@ -290,6 +290,42 @@ public class GlobalExceptionHandler {
         return buildErrorResponse(HttpStatus.BAD_REQUEST, "INVALID_GOAL_STATE", ex.getMessage(), detail);
     }
 
+    @Operation(summary = "Handle insufficient coins",
+            responses = @ApiResponse(responseCode = "400",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class),
+                            examples = @ExampleObject(value = """
+                                    {
+                                        "timestamp": "2024-01-15T14:44:00.123Z",
+                                        "code": "INSUFFICIENT_COINS",
+                                        "message": "Insufficient coins. Required: 1100, Available: 500"
+                                    }""")
+                    )
+            ))
+    @ExceptionHandler(InsufficientCoinsException.class)
+    public ResponseEntity<ErrorResponse> handleInsufficientCoins(InsufficientCoinsException ex) {
+        log.warn("Insufficient coins: {}", ex.getMessage());
+        return buildErrorResponse(HttpStatus.BAD_REQUEST, "INSUFFICIENT_COINS", ex.getMessage());
+    }
+
+    @Operation(summary = "Handle reward already redeemed",
+            responses = @ApiResponse(responseCode = "409",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class),
+                            examples = @ExampleObject(value = """
+                                    {
+                                        "timestamp": "2024-01-15T14:45:00.456Z",
+                                        "code": "REWARD_ALREADY_REDEEMED",
+                                        "message": "You have already redeemed this reward"
+                                    }""")
+                    )
+            ))
+    @ExceptionHandler(RewardAlreadyRedeemedException.class)
+    public ResponseEntity<ErrorResponse> handleRewardAlreadyRedeemed(RewardAlreadyRedeemedException ex) {
+        log.warn("Reward already redeemed: {}", ex.getMessage());
+        return buildErrorResponse(HttpStatus.CONFLICT, "REWARD_ALREADY_REDEEMED", ex.getMessage());
+    }
+
     @Operation(summary = "Handle generic runtime exceptions",
             responses = @ApiResponse(responseCode = "400",
                     content = @Content(mediaType = "application/json",
