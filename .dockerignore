@@ -1,0 +1,16 @@
+target/
+.mvn/
+mvnw
+mvnw.cmd
+.git
+.gitignore
+.env
+.env.local
+*.md
+.idea
+.vscode
+*.iml
+*.ipr
+*.iws
+.DS_Store
+
