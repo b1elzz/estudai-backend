@@ -10,12 +10,14 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -32,13 +34,53 @@ public class GlobalExceptionHandler {
                                     {
                                         "timestamp": "2024-01-15T14:30:45.123Z",
                                         "code": "EMAIL_ALREADY_REGISTERED",
-                                        "message": "Email is already registered in the system"
+                                        "message": "Este email já está cadastrado. Tente fazer login ou use outro email."
                                     }""")
                     )
             ))
     @ExceptionHandler(EmailAlreadyRegisteredException.class)
     public ResponseEntity<ErrorResponse> handleEmailAlreadyRegistered(EmailAlreadyRegisteredException ex) {
         return buildErrorResponse(HttpStatus.CONFLICT, "EMAIL_ALREADY_REGISTERED", ex.getMessage());
+    }
+
+    @Operation(summary = "Handle database constraint violations",
+            responses = @ApiResponse(responseCode = "409",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class),
+                            examples = @ExampleObject(value = """
+                                    {
+                                        "timestamp": "2024-01-15T14:30:45.123Z",
+                                        "code": "DUPLICATE_ENTRY",
+                                        "message": "Este email já está cadastrado. Tente fazer login ou use outro email."
+                                    }""")
+                    )
+            ))
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<ErrorResponse> handleDataIntegrityViolation(DataIntegrityViolationException ex) {
+        log.warn("Data integrity violation: {}", ex.getMessage());
+        
+        String message = ex.getMessage();
+        String userMessage;
+        String code;
+        
+        // Verifica se é erro de email duplicado
+        if (message != null && (message.contains("email") || message.contains("EMAIL") || 
+            message.contains("unique") || message.contains("duplicate"))) {
+            userMessage = "Este email já está cadastrado. Tente fazer login ou use outro email.";
+            code = "EMAIL_ALREADY_REGISTERED";
+        } 
+        // Verifica se é erro de chave primária duplicada (problema de sequência)
+        else if (message != null && (message.contains("users_pkey") || message.contains("duplicar valor da chave"))) {
+            userMessage = "Ocorreu um erro ao criar sua conta. Por favor, tente novamente em alguns instantes.";
+            code = "DATABASE_ERROR";
+        }
+        // Outros erros de constraint
+        else {
+            userMessage = "Os dados informados já estão em uso. Verifique e tente novamente.";
+            code = "DUPLICATE_ENTRY";
+        }
+        
+        return buildErrorResponse(HttpStatus.CONFLICT, code, userMessage);
     }
 
     @Operation(summary = "Handle invalid email domain",
@@ -84,7 +126,14 @@ public class GlobalExceptionHandler {
     @ExceptionHandler({UserNotFoundException.class, InvalidPasswordException.class})
     public ResponseEntity<ErrorResponse> handleAuthExceptions(RuntimeException ex) {
         String code = ex instanceof UserNotFoundException ? "USER_NOT_FOUND" : "INVALID_PASSWORD";
-        return buildErrorResponse(HttpStatus.UNAUTHORIZED, code, ex.getMessage());
+        String message = ex.getMessage();
+        // Garante que a mensagem está em português
+        if (ex instanceof UserNotFoundException && !message.contains("não encontrado")) {
+            message = "Usuário não encontrado. Verifique o email e tente novamente.";
+        } else if (ex instanceof InvalidPasswordException && !message.contains("incorreta")) {
+            message = "Senha incorreta. Verifique e tente novamente.";
+        }
+        return buildErrorResponse(HttpStatus.UNAUTHORIZED, code, message);
     }
 
     @Operation(summary = "Handle validation errors",
@@ -121,9 +170,17 @@ public class GlobalExceptionHandler {
                 ))
                 .collect(Collectors.toList());
 
+        ErrorResponse errorResponse = new ErrorResponse(
+                LocalDateTime.now(),
+                "VALIDATION_ERROR",
+                "Dados inválidos. Verifique os campos e tente novamente.",
+                null,
+                errors
+        );
+
         return ResponseEntity
                 .status(HttpStatus.BAD_REQUEST)
-                .body(new ErrorResponse("VALIDATION_ERROR", "Validation failed", null));
+                .body(errorResponse);
     }
 
     @Operation(summary = "Handle unauthenticated user",
@@ -360,7 +417,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleGenericException(Exception ex) {
         log.error("Unexpected error occurred: ", ex);
         return buildErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR, "INTERNAL_SERVER_ERROR",
-                "An unexpected error occurred", ex.getClass().getSimpleName() + ": " + ex.getMessage());
+                "Ocorreu um erro inesperado. Tente novamente em alguns instantes.", null);
     }
 
     private ResponseEntity<ErrorResponse> buildErrorResponse(HttpStatus status, String code, String message) {

@@ -20,3 +20,6 @@ public interface RewardRedemptionRepository extends JpaRepository<RewardRedempti
     boolean existsByUserIdAndRewardId(Long userId, Long rewardId);
 }
 
+
+
+

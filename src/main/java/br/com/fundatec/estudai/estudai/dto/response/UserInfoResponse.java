@@ -27,3 +27,6 @@ public class UserInfoResponse {
     private Integer coins;
 }
 
+
+
+

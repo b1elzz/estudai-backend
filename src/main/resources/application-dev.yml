@@ -31,10 +31,10 @@ spring:
       encoding: UTF-8
 
   mail:
-    host: smtp.gmail.com
-    port: 587
-    username: gabriel050monteiro@gmail.com
-    password: fsis wbjd lzqn qruu
+    host: ${SMTP_HOST:smtp.gmail.com}
+    port: ${SMTP_PORT:587}
+    username: ${EMAIL_USERNAME:}
+    password: ${EMAIL_PASSWORD:}
     properties:
       mail.smtp:
         auth: true
@@ -53,7 +53,7 @@ spring:
     cache: false
 
 jwt:
-  secret: sIsVALERKBHu+Yj57rBWrKmaHhz9UHROYwtR9RN2DLw=
+  secret: ${JWT_SECRET:dev-secret-key-change-in-production}
   expiration: 86400000
 
 estudai:

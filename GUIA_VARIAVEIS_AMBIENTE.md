@@ -232,18 +232,18 @@ Aqui está um exemplo completo de como ficam todas as variáveis:
 SPRING_PROFILES_ACTIVE=prod
 
 # Banco de Dados
-DATABASE_URL=jdbc:postgresql://dpg-d4agm87diees73d2u9m0-a.oregon-postgres.render.com:5432/estudai_nu9k
-DB_USERNAME=estudai_nu9k_user
-DB_PASSWORD=uLu4yANyj5SO54AiP1LlpocU733x2PHq
+DATABASE_URL=jdbc:postgresql://seu-host:5432/seu-database
+DB_USERNAME=seu_usuario
+DB_PASSWORD=SUA_SENHA_AQUI
 
 # Email
 SMTP_HOST=smtp.gmail.com
 SMTP_PORT=587
-EMAIL_USERNAME=estudai.app@gmail.com
-EMAIL_PASSWORD=abcdefghijklmnop
+EMAIL_USERNAME=seu-email@gmail.com
+EMAIL_PASSWORD=SUA_SENHA_DE_APP_AQUI
 
-# JWT
-JWT_SECRET=aB3dEf9gHiJkLmNoPqRsTuVwXyZ1234567890AbCdEf
+# JWT (Gere uma chave segura com pelo menos 32 caracteres)
+JWT_SECRET=GERE_UMA_CHAVE_SECRETA_SEGURA_AQUI_COM_PELO_MENOS_32_CARACTERES
 ```
 
 ---

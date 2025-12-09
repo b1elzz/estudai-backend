@@ -16,3 +16,6 @@ public interface RewardRepository extends JpaRepository<Reward, Long> {
     List<Reward> findByActiveTrueAndCategoryInOrderByCreatedAtDesc(List<Reward.Category> categories);
 }
 
+
+
+

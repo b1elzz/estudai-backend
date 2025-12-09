@@ -6,7 +6,7 @@ public class InvalidDomainException extends RuntimeException {
     private final List<String> validDomains;
 
     public InvalidDomainException(List<String> validDomains) {
-        super("Email domain not allowed. Please use one of the valid domains");
+        super("Domínio de email não permitido. Use um dos domínios válidos.");
         this.validDomains = validDomains;
     }
 

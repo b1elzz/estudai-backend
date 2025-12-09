@@ -24,6 +24,9 @@ public class CustomListResponse {
     private Integer questionsCount;
     private Boolean includeAnswered;
     private List<QuestionResponse> questions;
+    private Long correctAnswers;
+    private Long wrongAnswers;
+    private Long totalAnswers;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

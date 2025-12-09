@@ -62,7 +62,7 @@ public class CustomListController {
     @GetMapping
     @Operation(
             summary = "Get user lists",
-            description = "Retrieve all custom question lists created by the authenticated user"
+            description = "Retrieve all custom question lists created by the authenticated user. Optionally filter by subject."
     )
     @ApiResponses({
             @ApiResponse(
@@ -72,9 +72,12 @@ public class CustomListController {
             ),
             @ApiResponse(responseCode = "401", description = "User not authenticated")
     })
-    public ResponseEntity<List<CustomListResponse>> getUserLists(Authentication authentication) {
+    public ResponseEntity<List<CustomListResponse>> getUserLists(
+            @Parameter(description = "Filter by subject (optional)", example = "MAT")
+            @RequestParam(required = false) String subject,
+            Authentication authentication) {
         User user = authenticationUtils.getUser(authentication);
-        List<CustomListResponse> lists = customListService.getUserLists(user);
+        List<CustomListResponse> lists = customListService.getUserLists(user, subject);
         return ResponseEntity.ok(lists);
     }
 

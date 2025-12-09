@@ -2,7 +2,7 @@ package br.com.fundatec.estudai.estudai.exception;
 
 public class InvalidCodeException extends RuntimeException {
     public InvalidCodeException() {
-        super("Invalid or expired recovery code");
+        super("Código inválido ou expirado. Solicite um novo código.");
     }
 
     public InvalidCodeException(String message) {

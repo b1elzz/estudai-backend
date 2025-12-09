@@ -10,6 +10,7 @@ import br.com.fundatec.estudai.estudai.exception.ResourceNotFoundException;
 import br.com.fundatec.estudai.estudai.exception.UnauthenticatedUserException;
 import br.com.fundatec.estudai.estudai.mapper.CustomListMapper;
 import br.com.fundatec.estudai.estudai.repository.CustomListRepository;
+import br.com.fundatec.estudai.estudai.repository.ListAnswerRepository;
 import br.com.fundatec.estudai.estudai.repository.QuestionRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -34,6 +35,7 @@ public class CustomListService {
     
     private final CustomListRepository customListRepository;
     private final QuestionRepository questionRepository;
+    private final ListAnswerRepository listAnswerRepository;
     private final CustomListMapper customListMapper;
 
     /**
@@ -62,19 +64,27 @@ public class CustomListService {
      * Retrieves all custom lists for the authenticated user
      *
      * @param user Authenticated user
+     * @param subject Optional subject filter
      * @return List of user's custom lists
      */
     @Transactional(readOnly = true)
-    public List<CustomListResponse> getUserLists(User user) {
-        log.debug("Retrieving all custom lists for user: {}", user != null ? user.getEmail() : "null");
+    public List<CustomListResponse> getUserLists(User user, String subject) {
+        log.debug("Retrieving custom lists for user: {} with subject filter: {}", 
+                user != null ? user.getEmail() : "null", subject);
         
         if (user == null) {
             return Collections.emptyList();
         }
 
-        return customListRepository.findByUserIdOrderByCreatedAtDesc(user.getId())
-                .stream()
-                .map(customListMapper::toResponseDTO)
+        List<CustomList> lists;
+        if (subject != null && !subject.isEmpty()) {
+            lists = customListRepository.findByUserAndFilters(user, null, subject);
+        } else {
+            lists = customListRepository.findByUserIdOrderByCreatedAtDesc(user.getId());
+        }
+
+        return lists.stream()
+                .map(list -> enrichWithStatistics(customListMapper.toResponseDTO(list), list, user))
                 .collect(Collectors.toList());
     }
 
@@ -96,7 +106,7 @@ public class CustomListService {
         CustomList list = findListByIdOrThrow(id);
         validateListOwnership(list, user);
 
-        return customListMapper.toResponseDTO(list);
+        return enrichWithStatistics(customListMapper.toResponseDTO(list), list, user);
     }
 
     /**
@@ -142,6 +152,11 @@ public class CustomListService {
         CustomList list = findListByIdOrThrow(id);
         validateListOwnership(list, user);
 
+        // Delete all answers associated with this list first
+        listAnswerRepository.deleteByCustomList(list);
+        log.debug("Deleted all answers associated with list ID: {}", id);
+
+        // Now delete the list itself
         customListRepository.delete(list);
         log.info("Custom list deleted successfully: ID={}", id);
     }
@@ -262,5 +277,28 @@ public class CustomListService {
 
         // If no year specified, filter only by subject
         return questionRepository.findRandomBySubject(subject, count);
+    }
+
+    /**
+     * Enriches CustomListResponse with answer statistics
+     */
+    private CustomListResponse enrichWithStatistics(CustomListResponse response, CustomList list, User user) {
+        try {
+            Long correctAnswers = listAnswerRepository.countCorrectAnswersByUserAndList(user, list);
+            Long wrongAnswers = listAnswerRepository.countWrongAnswersByUserAndList(user, list);
+            Long totalAnswers = listAnswerRepository.countTotalAnswersByUserAndList(user, list);
+
+            response.setCorrectAnswers(correctAnswers != null ? correctAnswers : 0L);
+            response.setWrongAnswers(wrongAnswers != null ? wrongAnswers : 0L);
+            response.setTotalAnswers(totalAnswers != null ? totalAnswers : 0L);
+        } catch (Exception e) {
+            log.warn("Error enriching statistics for list {}: {}", list.getId(), e.getMessage());
+            // Se houver erro, define valores padrão como 0
+            response.setCorrectAnswers(0L);
+            response.setWrongAnswers(0L);
+            response.setTotalAnswers(0L);
+        }
+
+        return response;
     }
 }
