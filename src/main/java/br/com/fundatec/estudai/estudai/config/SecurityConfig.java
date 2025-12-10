@@ -47,14 +47,15 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.addAllowedOriginPattern("*");
-        configuration.addAllowedMethod("*");
-        configuration.addAllowedHeader("*");
-        configuration.setAllowCredentials(true);
-        configuration.setMaxAge(3600L);
+        configuration.addAllowedOriginPattern("*"); // Permite todas as origens (incluindo Railway, localhost, etc)
+        configuration.addAllowedMethod("*"); // Permite todos os métodos HTTP
+        configuration.addAllowedHeader("*"); // Permite todos os headers
+        configuration.setAllowCredentials(true); // Permite cookies/credenciais
+        configuration.setMaxAge(3600L); // Cache de preflight por 1 hora
+        configuration.addExposedHeader("Authorization"); // Expõe o header Authorization
         
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", configuration);
+        source.registerCorsConfiguration("/**", configuration); // Aplica a todas as rotas
         return source;
     }
 
