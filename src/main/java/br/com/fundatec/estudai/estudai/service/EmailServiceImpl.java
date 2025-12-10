@@ -6,7 +6,6 @@ import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.annotation.Profile;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
@@ -54,7 +53,7 @@ public class EmailServiceImpl implements EmailService {
             if (exceptionName.contains("Authentication") || errorMessage.toLowerCase().contains("authentication")) {
                 log.error("Email authentication failed. Check EMAIL_USERNAME and EMAIL_PASSWORD for: {}", fromEmail, e);
                 throw new EmailSendingException("Email authentication failed. Please check email credentials.", e);
-            } else if (exceptionName.contains("Messaging") || e instanceof jakarta.mail.MessagingException) {
+            } else if (exceptionName.contains("Messaging")) {
                 log.error("Email messaging error for: {} - {}", toEmail, errorMessage, e);
                 throw new EmailSendingException("Failed to send recovery email to: " + toEmail + ". Error: " + errorMessage, e);
             } else {
