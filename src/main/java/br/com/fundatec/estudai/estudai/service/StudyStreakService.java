@@ -6,12 +6,12 @@ import br.com.fundatec.estudai.estudai.entity.User;
 import br.com.fundatec.estudai.estudai.mapper.StudyStreakMapper;
 import br.com.fundatec.estudai.estudai.repository.StudyStreakRepository;
 import br.com.fundatec.estudai.estudai.repository.QuestionAnswerRepository;
+import br.com.fundatec.estudai.estudai.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
-import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -20,6 +20,7 @@ public class StudyStreakService {
     private final StudyStreakRepository studyStreakRepository;
     private final QuestionAnswerRepository questionAnswerRepository;
     private final StudyStreakMapper studyStreakMapper;
+    private final UserRepository userRepository;
 
     public StudyStreakResponse getUserStreak(User user) {
         if (user == null) {
@@ -61,11 +62,17 @@ public class StudyStreakService {
                 }
 
                 studyStreakRepository.save(streak);
+                
+                // Update streakDays in users table
+                updateUserStreakDays(user, streak.getConsecutiveDays());
             }
         } else {
             if (lastStudyDay != null && lastStudyDay.isBefore(today.minusDays(1))) {
                 streak.setConsecutiveDays(0);
                 studyStreakRepository.save(streak);
+                
+                // Update streakDays in users table
+                updateUserStreakDays(user, 0);
             }
         }
     }
@@ -83,6 +90,9 @@ public class StudyStreakService {
         streak.setLastStudyDay(null);
 
         studyStreakRepository.save(streak);
+        
+        // Update streakDays in users table
+        updateUserStreakDays(user, 0);
     }
 
     private StudyStreak createNewStreak(User user) {
@@ -102,5 +112,13 @@ public class StudyStreakService {
         response.setCreatedAt(null);
         response.setUpdatedAt(null);
         return response;
+    }
+
+    /**
+     * Updates the streakDays field in the users table
+     */
+    private void updateUserStreakDays(User user, int streakDays) {
+        user.setStreakDays(streakDays);
+        userRepository.save(user);
     }
 }

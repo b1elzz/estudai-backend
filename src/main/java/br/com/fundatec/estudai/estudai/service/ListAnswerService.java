@@ -10,9 +10,11 @@ import br.com.fundatec.estudai.estudai.exception.AccessDeniedException;
 import br.com.fundatec.estudai.estudai.exception.ResourceNotFoundException;
 import br.com.fundatec.estudai.estudai.exception.UnauthenticatedUserException;
 import br.com.fundatec.estudai.estudai.mapper.ListAnswerMapper;
+import br.com.fundatec.estudai.estudai.config.ApplicationConstants;
 import br.com.fundatec.estudai.estudai.repository.CustomListRepository;
 import br.com.fundatec.estudai.estudai.repository.ListAnswerRepository;
 import br.com.fundatec.estudai.estudai.repository.QuestionRepository;
+import br.com.fundatec.estudai.estudai.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -31,6 +33,7 @@ public class ListAnswerService {
     private final QuestionRepository questionRepository;
     private final StudyStreakService studyStreakService;
     private final ListAnswerMapper listAnswerMapper;
+    private final UserRepository userRepository;
 
     @Transactional
     public ListAnswerResponse answerQuestionInList(ListAnswerRequest request, User user) {
@@ -47,8 +50,18 @@ public class ListAnswerService {
 
         ListAnswer answer = findOrCreateAnswer(user, customList, question);
 
+        // Check if this is a new answer (first time answering this question in this list)
+        boolean isNewAnswer = answer.getId() == null;
+
         updateAnswerData(answer, request, question);
         ListAnswer savedAnswer = listAnswerRepository.save(answer);
+
+        // Add coins if answer is correct and it's a new answer
+        if (savedAnswer.getIsCorrect() != null && savedAnswer.getIsCorrect() && isNewAnswer) {
+            addCoinsToUser(user, ApplicationConstants.Answers.COINS_PER_CORRECT_ANSWER);
+            log.info("Added {} coins to user {} for correct answer in list", 
+                    ApplicationConstants.Answers.COINS_PER_CORRECT_ANSWER, user.getEmail());
+        }
 
         // Update user's study streak
         studyStreakService.updateStreak(user);
@@ -174,6 +187,18 @@ public class ListAnswerService {
         
         log.debug("Answer evaluation: UserAnswer={}, CorrectAnswer={}, IsCorrect={}", 
                 request.getUserAnswer(), question.getCorrectAlternative(), isCorrect);
+    }
+
+    /**
+     * Adds coins to user's account
+     */
+    private void addCoinsToUser(User user, int coinsToAdd) {
+        if (user.getCoins() == null) {
+            user.setCoins(0);
+        }
+        user.setCoins(user.getCoins() + coinsToAdd);
+        userRepository.save(user);
+        log.debug("User {} now has {} coins", user.getEmail(), user.getCoins());
     }
 }
 

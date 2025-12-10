@@ -13,6 +13,7 @@ import br.com.fundatec.estudai.estudai.exception.UnauthenticatedUserException;
 import br.com.fundatec.estudai.estudai.mapper.QuestionAnswerMapper;
 import br.com.fundatec.estudai.estudai.repository.QuestionRepository;
 import br.com.fundatec.estudai.estudai.repository.QuestionAnswerRepository;
+import br.com.fundatec.estudai.estudai.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -35,6 +36,7 @@ public class QuestionAnswerService {
     private final QuestionRepository questionRepository;
     private final StudyStreakService studyStreakService;
     private final QuestionAnswerMapper questionAnswerMapper;
+    private final UserRepository userRepository;
 
     /**
      * Submits an answer to a question
@@ -55,8 +57,18 @@ public class QuestionAnswerService {
         Question question = findQuestionByIdOrThrow(request.getQuestionId());
         QuestionAnswer answer = findOrCreateAnswer(user, question, request.getQuestionId());
 
+        // Check if this is a new answer (first time answering this question)
+        boolean isNewAnswer = answer.getId() == null;
+        
         updateAnswerData(answer, request, question);
         QuestionAnswer savedAnswer = questionAnswerRepository.save(answer);
+
+        // Add coins if answer is correct and it's a new answer
+        if (savedAnswer.getIsCorrect() != null && savedAnswer.getIsCorrect() && isNewAnswer) {
+            addCoinsToUser(user, ApplicationConstants.Answers.COINS_PER_CORRECT_ANSWER);
+            log.info("Added {} coins to user {} for correct answer", 
+                    ApplicationConstants.Answers.COINS_PER_CORRECT_ANSWER, user.getEmail());
+        }
 
         // Update user's study streak
         studyStreakService.updateStreak(user);
@@ -259,5 +271,17 @@ public class QuestionAnswerService {
         
         log.debug("Answer evaluation: UserAnswer={}, CorrectAnswer={}, IsCorrect={}", 
                 request.getUserAnswer(), question.getCorrectAlternative(), isCorrect);
+    }
+
+    /**
+     * Adds coins to user's account
+     */
+    private void addCoinsToUser(User user, int coinsToAdd) {
+        if (user.getCoins() == null) {
+            user.setCoins(0);
+        }
+        user.setCoins(user.getCoins() + coinsToAdd);
+        userRepository.save(user);
+        log.debug("User {} now has {} coins", user.getEmail(), user.getCoins());
     }
 }
