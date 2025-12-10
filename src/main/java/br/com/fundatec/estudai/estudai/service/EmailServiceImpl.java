@@ -38,7 +38,14 @@ public class EmailServiceImpl implements EmailService {
     public void sendRecoveryEmail(String toEmail, String recoveryCode, String userName) {
         try {
             validateEmail(toEmail);
+            
+            // Log de debug para verificar configuração (sem mostrar senha completa)
             log.debug("Attempting to send recovery email to: {} from: {}", toEmail, fromEmail);
+            log.debug("SMTP configuration - Host: {}, Port: {}, Username: {}", 
+                    mailSender != null ? "configured" : "null", 
+                    "configured", 
+                    fromEmail != null ? fromEmail : "null");
+            
             MimeMessage message = createRecoveryMessage(toEmail, recoveryCode, userName);
             mailSender.send(message);
             log.info("Recovery email sent successfully to: {}", toEmail);
@@ -50,14 +57,17 @@ public class EmailServiceImpl implements EmailService {
             String errorMessage = e.getMessage() != null ? e.getMessage() : "";
             String exceptionName = e.getClass().getSimpleName();
             
+            log.error("Error sending email - Exception: {}, Message: {}, From: {}", 
+                    exceptionName, errorMessage, fromEmail, e);
+            
             if (exceptionName.contains("Authentication") || errorMessage.toLowerCase().contains("authentication")) {
-                log.error("Email authentication failed. Check EMAIL_USERNAME and EMAIL_PASSWORD for: {}", fromEmail, e);
+                log.error("Email authentication failed. Check EMAIL_USERNAME and EMAIL_PASSWORD. Username: {}", fromEmail);
                 throw new EmailSendingException("Email authentication failed. Please check email credentials.", e);
             } else if (exceptionName.contains("Messaging")) {
-                log.error("Email messaging error for: {} - {}", toEmail, errorMessage, e);
+                log.error("Email messaging error for: {} - {}", toEmail, errorMessage);
                 throw new EmailSendingException("Failed to send recovery email to: " + toEmail + ". Error: " + errorMessage, e);
             } else {
-                log.error("Unexpected error sending recovery email to: {}", toEmail, e);
+                log.error("Unexpected error sending recovery email to: {}", toEmail);
                 throw new EmailSendingException("Failed to send recovery email to: " + toEmail, e);
             }
         }
