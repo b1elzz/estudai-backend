@@ -28,7 +28,10 @@ spring:
 
   sql:
     init:
-      mode: never
+      mode: always
+      data-locations: classpath:import.sql
+      continue-on-error: true
+      encoding: UTF-8
 
   mail:
     host: ${SMTP_HOST:smtp.gmail.com}
