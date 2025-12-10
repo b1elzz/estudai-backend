@@ -30,6 +30,11 @@ public class StudyStreakService {
         StudyStreak streak = studyStreakRepository.findByUser(user)
                 .orElseGet(() -> createNewStreak(user));
 
+        // Sincroniza streakDays do users com study_streaks
+        if (user.getStreakDays() == null || !user.getStreakDays().equals(streak.getConsecutiveDays())) {
+            updateUserStreakDays(user, streak.getConsecutiveDays());
+        }
+
         return studyStreakMapper.toResponseDTO(streak);
     }
 
@@ -45,36 +50,34 @@ public class StudyStreakService {
         LocalDate today = LocalDate.now();
         LocalDate lastStudyDay = streak.getLastStudyDay();
 
-        Long answersToday = questionAnswerRepository.countAnswersByUserAndDate(user, today);
-
-        if (answersToday > 0) {
-            if (lastStudyDay == null || lastStudyDay.isBefore(today)) {
-                if (lastStudyDay != null && lastStudyDay.equals(today.minusDays(1))) {
-                    streak.setConsecutiveDays(streak.getConsecutiveDays() + 1);
-                } else if (lastStudyDay == null || lastStudyDay.isBefore(today.minusDays(1))) {
+        // Se ainda não estudou hoje, atualiza o streak
+        if (lastStudyDay == null || lastStudyDay.isBefore(today)) {
+            if (lastStudyDay != null && lastStudyDay.equals(today.minusDays(1))) {
+                // Estudou ontem, continua o streak
+                streak.setConsecutiveDays(streak.getConsecutiveDays() + 1);
+            } else {
+                // Não estudou ontem ou é o primeiro dia, reseta ou inicia streak
+                if (lastStudyDay != null && lastStudyDay.isBefore(today.minusDays(1))) {
+                    // Perdeu o streak (não estudou ontem)
+                    streak.setConsecutiveDays(1);
+                } else {
+                    // Primeiro dia de estudo
                     streak.setConsecutiveDays(1);
                 }
-
-                streak.setLastStudyDay(today);
-
-                if (streak.getConsecutiveDays() > streak.getLongestStreak()) {
-                    streak.setLongestStreak(streak.getConsecutiveDays());
-                }
-
-                studyStreakRepository.save(streak);
-                
-                // Update streakDays in users table
-                updateUserStreakDays(user, streak.getConsecutiveDays());
             }
-        } else {
-            if (lastStudyDay != null && lastStudyDay.isBefore(today.minusDays(1))) {
-                streak.setConsecutiveDays(0);
-                studyStreakRepository.save(streak);
-                
-                // Update streakDays in users table
-                updateUserStreakDays(user, 0);
+
+            streak.setLastStudyDay(today);
+
+            if (streak.getConsecutiveDays() > streak.getLongestStreak()) {
+                streak.setLongestStreak(streak.getConsecutiveDays());
             }
+
+            studyStreakRepository.save(streak);
+            
+            // Update streakDays in users table
+            updateUserStreakDays(user, streak.getConsecutiveDays());
         }
+        // Se já estudou hoje, não faz nada (mantém o streak atual)
     }
 
     @Transactional

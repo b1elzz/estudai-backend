@@ -23,7 +23,7 @@ public class EmailServiceImpl implements EmailService {
 
     private static final String RECOVERY_TEMPLATE = "email/password-recovery";
     private static final String REWARD_REDEMPTION_TEMPLATE = "email/reward-redemption";
-    private static final String LOGO_SVG_PATH = "templates/email/assets/modelo 1-Photoroom 2.svg";
+    private static final String LOGO_PNG_PATH = "templates/email/assets/modelo 1-Photoroom 1.png";
     private static final String MASCOT_IMAGE_PATH = "static/images/mascot.png";
 
     private final JavaMailSender mailSender;
@@ -39,13 +39,21 @@ public class EmailServiceImpl implements EmailService {
     public void sendRecoveryEmail(String toEmail, String recoveryCode, String userName) {
         try {
             validateEmail(toEmail);
+            log.debug("Attempting to send recovery email to: {} from: {}", toEmail, fromEmail);
             MimeMessage message = createRecoveryMessage(toEmail, recoveryCode, userName);
             mailSender.send(message);
             log.info("Recovery email sent successfully to: {}", toEmail);
         } catch (EmailSendingException e) {
+            log.error("Email sending exception for: {} - {}", toEmail, e.getMessage(), e);
             throw e;
+        } catch (jakarta.mail.AuthenticationFailedException e) {
+            log.error("Email authentication failed. Check EMAIL_USERNAME and EMAIL_PASSWORD for: {}", fromEmail, e);
+            throw new EmailSendingException("Email authentication failed. Please check email credentials.", e);
+        } catch (jakarta.mail.MessagingException e) {
+            log.error("Email messaging error for: {} - {}", toEmail, e.getMessage(), e);
+            throw new EmailSendingException("Failed to send recovery email to: " + toEmail + ". Error: " + e.getMessage(), e);
         } catch (Exception e) {
-            log.error("Failed to send recovery email to: {}", toEmail, e);
+            log.error("Unexpected error sending recovery email to: {}", toEmail, e);
             throw new EmailSendingException("Failed to send recovery email to: " + toEmail, e);
         }
     }
@@ -105,15 +113,15 @@ public class EmailServiceImpl implements EmailService {
 
     private void addLogoImage(MimeMessageHelper helper) {
         try {
-            ClassPathResource logoImage = new ClassPathResource(LOGO_SVG_PATH);
+            ClassPathResource logoImage = new ClassPathResource(LOGO_PNG_PATH);
             if (logoImage.exists()) {
-                helper.addInline("logo", logoImage, "image/svg+xml");
-                log.debug("Logo SVG added to email");
+                helper.addInline("logo", logoImage, "image/png");
+                log.debug("Logo PNG added to email");
             } else {
-                log.warn("Logo SVG not found at: {}", LOGO_SVG_PATH);
+                log.warn("Logo PNG not found at: {}", LOGO_PNG_PATH);
             }
         } catch (Exception e) {
-            log.warn("Could not add logo SVG to email", e);
+            log.warn("Could not add logo PNG to email", e);
         }
     }
 
