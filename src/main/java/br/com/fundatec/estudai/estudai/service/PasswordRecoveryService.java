@@ -10,6 +10,7 @@ import br.com.fundatec.estudai.estudai.exception.UserNotFoundException;
 import br.com.fundatec.estudai.estudai.repository.PasswordRecoveryRepository;
 import br.com.fundatec.estudai.estudai.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -17,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.Random;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class PasswordRecoveryService {
@@ -44,7 +46,14 @@ public class PasswordRecoveryService {
         recovery.setExpirationDate(LocalDateTime.now().plusHours(1));
         passwordRecoveryRepository.save(recovery);
 
-        emailService.sendRecoveryEmail(email, code, user.getName());
+        // Envia email de forma assíncrona para não bloquear a requisição
+        try {
+            emailService.sendRecoveryEmail(email, code, user.getName());
+        } catch (Exception e) {
+            // Log do erro mas não falha a requisição - código já foi salvo
+            log.error("Failed to send recovery email to: {}. Code: {}", email, code, e);
+            // Não relança a exceção para não quebrar o fluxo
+        }
     }
 
     @Transactional
