@@ -46,12 +46,18 @@ public class EmailServiceImpl implements EmailService {
         } catch (EmailSendingException e) {
             log.error("Email sending exception for: {} - {}", toEmail, e.getMessage(), e);
             throw e;
-        } catch (jakarta.mail.AuthenticationFailedException e) {
-            log.error("Email authentication failed. Check EMAIL_USERNAME and EMAIL_PASSWORD for: {}", fromEmail, e);
-            throw new EmailSendingException("Email authentication failed. Please check email credentials.", e);
         } catch (jakarta.mail.MessagingException e) {
-            log.error("Email messaging error for: {} - {}", toEmail, e.getMessage(), e);
-            throw new EmailSendingException("Failed to send recovery email to: " + toEmail + ". Error: " + e.getMessage(), e);
+            // MessagingException inclui AuthenticationFailedException
+            String errorMessage = e.getMessage();
+            if (errorMessage != null && (errorMessage.contains("authentication") || 
+                errorMessage.contains("Authentication") || 
+                e.getClass().getSimpleName().contains("Authentication"))) {
+                log.error("Email authentication failed. Check EMAIL_USERNAME and EMAIL_PASSWORD for: {}", fromEmail, e);
+                throw new EmailSendingException("Email authentication failed. Please check email credentials.", e);
+            } else {
+                log.error("Email messaging error for: {} - {}", toEmail, errorMessage, e);
+                throw new EmailSendingException("Failed to send recovery email to: " + toEmail + ". Error: " + errorMessage, e);
+            }
         } catch (Exception e) {
             log.error("Unexpected error sending recovery email to: {}", toEmail, e);
             throw new EmailSendingException("Failed to send recovery email to: " + toEmail, e);
