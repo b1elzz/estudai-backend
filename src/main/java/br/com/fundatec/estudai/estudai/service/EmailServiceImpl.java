@@ -46,21 +46,21 @@ public class EmailServiceImpl implements EmailService {
         } catch (EmailSendingException e) {
             log.error("Email sending exception for: {} - {}", toEmail, e.getMessage(), e);
             throw e;
-        } catch (jakarta.mail.MessagingException e) {
-            // MessagingException inclui AuthenticationFailedException
-            String errorMessage = e.getMessage();
-            if (errorMessage != null && (errorMessage.contains("authentication") || 
-                errorMessage.contains("Authentication") || 
-                e.getClass().getSimpleName().contains("Authentication"))) {
+        } catch (Exception e) {
+            // Verifica se é erro de autenticação ou messaging
+            String errorMessage = e.getMessage() != null ? e.getMessage() : "";
+            String exceptionName = e.getClass().getSimpleName();
+            
+            if (exceptionName.contains("Authentication") || errorMessage.toLowerCase().contains("authentication")) {
                 log.error("Email authentication failed. Check EMAIL_USERNAME and EMAIL_PASSWORD for: {}", fromEmail, e);
                 throw new EmailSendingException("Email authentication failed. Please check email credentials.", e);
-            } else {
+            } else if (exceptionName.contains("Messaging") || e instanceof jakarta.mail.MessagingException) {
                 log.error("Email messaging error for: {} - {}", toEmail, errorMessage, e);
                 throw new EmailSendingException("Failed to send recovery email to: " + toEmail + ". Error: " + errorMessage, e);
+            } else {
+                log.error("Unexpected error sending recovery email to: {}", toEmail, e);
+                throw new EmailSendingException("Failed to send recovery email to: " + toEmail, e);
             }
-        } catch (Exception e) {
-            log.error("Unexpected error sending recovery email to: {}", toEmail, e);
-            throw new EmailSendingException("Failed to send recovery email to: " + toEmail, e);
         }
     }
 
